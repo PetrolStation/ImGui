@@ -7,6 +7,7 @@
 namespace PetrolEngine {
   class ImGuiLayer {
     public:
+    static Entity* selectedEntity;
     static void init();
     static void destroy();
     static void drawInspector();

@@ -17,6 +17,7 @@
 #include <string>
 
 namespace PetrolEngine {
+  Entity* ImGuiLayer::selectedEntity = nullptr;
   ImGuiIO* io;
   void ImGuiLayer::init(){ LOG_FUNCTION();
     ::IMGUI_CHECKVERSION();
@@ -48,6 +49,7 @@ namespace PetrolEngine {
   }
 
   void ImGuiLayer::destroy(){ LOG_FUNCTION();
+    selectedEntity = nullptr;
     ::ImGui_ImplOpenGL3_Shutdown();
     ::ImGui_ImplGlfw_Shutdown();
     ::ImGui::DestroyContext();
@@ -90,12 +92,11 @@ namespace PetrolEngine {
 
   }
 
-  Entity* selectedEntity = nullptr;
   void entityTree(Entity* e){ LOG_FUNCTION();
     ImGui::PushID((int)e->getID());
     if(ImGui::TreeNode(e->name.c_str())){
       
-      if(ImGui::IsItemClicked()) selectedEntity = e;
+      if(ImGui::IsItemClicked()) ImGuiLayer::selectedEntity = e;
 
       for(Entity* c : e->children) entityTree(c);
 
@@ -171,6 +172,8 @@ namespace PetrolEngine {
       for(auto type : Entity::componentTypes){
         auto storage = selectedEntity->getScene()->sceneRegistry.storage(type);
         
+        if(storage == nullptr) continue;
+
         InternalComponent* mydata = nullptr;
         
         if(storage->contains((entt::entity)selectedEntity->getID()))
@@ -181,7 +184,7 @@ namespace PetrolEngine {
         auto clas = split(std::string(storage->type().name().data()), ':').back(); clas.pop_back();
         
         if(ImGui::CollapsingHeader(clas.c_str())){
-          for(auto types : (*exposedElements)[mydata->typeId]){
+          for(auto types : exposedElements[type]){
             InspectorType type[4];
             memcpy(type, &types.type, sizeof(InspectorType[4]));
             typeInput(type, types.name, (void*)((uint64)mydata + (uint64)types.offset));
